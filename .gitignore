@@ -1,0 +1,6 @@
+.streamlit/secrets.toml
+learning_log.csv
+__pycache__/
+*.pyc
+
+ai_chat_log.csv
