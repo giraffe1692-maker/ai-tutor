@@ -34,23 +34,23 @@ def database_mode():
 
 
 @st.cache_resource
-def get_openai_client():
-    """Create an OpenAI client from Streamlit Secrets."""
+def get_ai_client():
+    """Create a Groq client (OpenAI-compatible API)."""
     try:
-        api_key = st.secrets["openai"]["api_key"]
-        return OpenAI(api_key=api_key)
+        api_key = st.secrets["groq"]["api_key"]
+        return OpenAI(
+            api_key=api_key,
+            base_url="https://api.groq.com/openai/v1",
+        )
     except Exception:
         return None
-
-def get_openai_model():
-    """Allow the deployed app owner to choose an available model in Secrets."""
+def get_ai_model():
     try:
-        return str(st.secrets["openai"].get("model", "gpt-4.1-mini"))
+        return str(st.secrets["groq"].get("model", "llama-3.3-70b-versatile"))
     except Exception:
-        return "gpt-4.1-mini"
-
+        return "llama-3.3-70b-versatile"
 def ai_tutor_available():
-    return get_openai_client() is not None
+    return get_ai_client() is not None
 
 
 ERROR_FEEDBACK = {
@@ -494,9 +494,9 @@ def tutor_system_prompt():
 """.strip()
 
 def call_ai_tutor(level, level_data, step, user_message, selected_response=None, error_code=None):
-    client = get_openai_client()
+    client = get_ai_client()  # 또는 get_openai_client() 이름 유지
     if client is None:
-        return None, "OpenAI API가 연결되지 않았습니다."
+        return None, "AI API가 연결되지 않았습니다."
 
     key = current_step_key(level, step["id"])
     history = st.session_state.ai_histories.get(key, [])
@@ -539,12 +539,12 @@ def call_ai_tutor(level, level_data, step, user_message, selected_response=None,
     )
 
     try:
-        response = client.responses.create(
-            model=get_openai_model(),
-            input=conversation,
-            max_output_tokens=350,
+        response = client.chat.completions.create(
+            model=get_ai_model(),
+            messages=messages,
+            max_tokens=350,
         )
-        text = response.output_text.strip()
+        text = response.choices[0].message.content.strip()
         return text, None
     except Exception as exc:
         return None, str(exc)
@@ -558,8 +558,8 @@ def render_ai_tutor(level, level_data, step, selected_response=None, error_code=
 
     if not ai_tutor_available():
         st.warning(
-            "OpenAI API가 연결되지 않았습니다. "
-            "Streamlit Secrets에 openai.api_key를 설정하면 이 기능을 사용할 수 있습니다."
+            "AI API가 연결되지 않았습니다. "
+            "Streamlit Secrets에 ai.api_key를 설정하면 이 기능을 사용할 수 있습니다."
         )
         return
 
