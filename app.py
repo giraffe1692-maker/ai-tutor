@@ -1204,9 +1204,6 @@ st.markdown("---")
 st.markdown(f"### 단계 {st.session_state.step + 1}")
 render_question(step["question"])
 
-if "image" in level_data:
-    st.image(level_data["image"], use_container_width=True)
-
 st.markdown("#### 선택지")
 render_options(step["options"])
 
