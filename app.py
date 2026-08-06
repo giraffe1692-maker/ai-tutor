@@ -541,7 +541,7 @@ def call_ai_tutor(level, level_data, step, user_message, selected_response=None,
     try:
         response = client.chat.completions.create(
             model=get_ai_model(),
-            messages=messages,
+            messages=conversation,
             max_tokens=350,
         )
         text = response.choices[0].message.content.strip()
