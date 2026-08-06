@@ -514,7 +514,7 @@ def call_ai_tutor(level, level_data, step, user_message, selected_response=None,
             "content": tutor_system_prompt(),
         },
         {
-            "role": "developer",
+            "role": "system",
             "content": (
                 "다음은 앱이 제공한 현재 문항 정보이다. "
                 "학생에게는 이 정보 중 정답을 직접 노출하지 말고 힌트 생성에만 활용하라.\n\n"
