@@ -136,6 +136,7 @@ LEVELS = {
         "title": "1수준 · 균일하게 대전된 부도체 구의 외부 전기장",
         "problem": r"""반지름 \(R\)인 부도체 구에 전체 전하 \(Q>0\)가 균일하게 분포한다.
 구의 중심으로부터 \(r>R\) 떨어진 지점의 전기장을 가우스 법칙으로 구하시오.""",
+        "image": "img/1-1.png",
         "steps": [
             {
                 "id": "symmetry",
@@ -207,6 +208,7 @@ LEVELS = {
         "title": "2수준 · 균일하게 대전된 부도체 구의 내부와 외부 전기장",
         "problem": r"""반지름 \(R\)인 부도체 구에 전체 전하 \(Q>0\)가 균일하게 분포한다.
 중심으로부터 거리 \(r\)인 지점의 전기장을 내부와 외부에서 각각 구하시오.""",
+        "image": "img/1-1.png",
         "steps": [
             {
                 "id": "regions",
@@ -294,6 +296,7 @@ LEVELS = {
         "title": "3수준 · 두께가 있는 부도체 구껍질의 전기장",
         "problem": r"""안쪽 반지름이 \(a\), 바깥쪽 반지름이 \(b\)인 두꺼운 부도체 구껍질에
 전체 전하 \(Q>0\)가 균일하게 분포한다. 모든 영역의 전기장을 구하시오.""",
+        "image": "img/3-1.png",
         "steps": [
             {
                 "id": "regions",
@@ -514,7 +517,7 @@ def call_ai_tutor(level, level_data, step, user_message, selected_response=None,
             "content": tutor_system_prompt(),
         },
         {
-            "role": "system",
+            "role": "developer",
             "content": (
                 "다음은 앱이 제공한 현재 문항 정보이다. "
                 "학생에게는 이 정보 중 정답을 직접 노출하지 말고 힌트 생성에만 활용하라.\n\n"
@@ -1172,6 +1175,8 @@ steps = level_data["steps"]
 
 st.subheader(level_data["title"])
 st.markdown(latex_to_markdown(level_data["problem"]))
+if "image" in level_data:
+    st.image(level_data["image"], use_container_width=True)
 st.progress(
     st.session_state.step / len(steps),
     text=f"진행 단계 {min(st.session_state.step + 1, len(steps))}/{len(steps)}",
@@ -1198,6 +1203,9 @@ choices = option_letter_map(step["options"])
 st.markdown("---")
 st.markdown(f"### 단계 {st.session_state.step + 1}")
 render_question(step["question"])
+
+if "image" in level_data:
+    st.image(level_data["image"], use_container_width=True)
 
 st.markdown("#### 선택지")
 render_options(step["options"])
