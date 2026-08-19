@@ -15,6 +15,22 @@ st.set_page_config(
     layout="wide",
 )
 
+st.markdown("""
+    <style>
+    /* 사진을 가운데 정렬합니다 */
+    [data-testid="stImage"] {
+        display: flex;
+        justify-content: center;
+    }
+    /* 사진의 최대 높이를 250px로 고정하고 비율을 유지하며 잘리지 않게 합니다 */
+    [data-testid="stImage"] img {
+        max-height: 250px !important;
+        width: auto !important;
+        object-fit: contain !important;
+    }
+    </style>
+""", unsafe_allow_html=True)
+
 LOG_PATH = Path("learning_log.csv")
 TABLE_NAME = "learning_logs"
 CHAT_TABLE_NAME = "ai_chat_logs"
@@ -778,8 +794,12 @@ def render_question(text):
 def render_options(options):
     """Render option contents separately so LaTeX is not trapped inside st.radio."""
     letters = ["A", "B", "C", "D", "E", "F"]
-    for idx, (label, _) in enumerate(options):
+    for idx, opt in enumerate(options):
         letter = letters[idx]
+        label = opt[0]
+        # 3번째 데이터(사진 경로)가 있으면 가져오고, 없으면 None으로 처리합니다.
+        img = opt[2] if len(opt) > 2 else None
+        
         with st.container(border=True):
             st.markdown(f"**{letter}.**")
             if is_formula_only(label):
@@ -787,6 +807,7 @@ def render_options(options):
             else:
                 st.markdown(latex_to_markdown(label))
 
+            # 보기 전용 사진이 존재할 경우에만 화면에 출력합니다.
             if img:
                 st.image(img, use_container_width=True)
 
