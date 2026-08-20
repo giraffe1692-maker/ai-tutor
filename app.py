@@ -1610,6 +1610,7 @@ if st.session_state.step >= len(steps):
         if st.button("원통대칭 파트(4~6수준) 최종 결과 보기", type="primary"):
             st.session_state.completed = True
             st.rerun()
+    st.stop()
 
 step = steps[st.session_state.step]
 choices = option_letter_map(step["options"])
