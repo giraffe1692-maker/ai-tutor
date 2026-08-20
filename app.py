@@ -1400,12 +1400,16 @@ col1, col2 = st.columns(2)
 
 with col1:
     if st.button("부도체 구 학습하기", use_container_width=True):
-        st.session_state.current_level = "1"
-        st.rerun() # 화면 새로고침
+        st.session_state.level = 1       # current_level이 아닌 level로 변경, 숫자 1
+        st.session_state.step = 0        # 1수준 첫 문제부터 시작하도록 초기화
+        st.session_state.completed = False
+        st.rerun() 
         
 with col2:
     if st.button("부도체 원기둥 학습하기", use_container_width=True):
-        st.session_state.current_level = "4" # 원기둥 1수준으로 즉시 점프
+        st.session_state.level = 4       # 원기둥 1수준인 4로 변경
+        st.session_state.step = 0        # 4수준 첫 문제부터 시작하도록 초기화
+        st.session_state.completed = False
         st.rerun()
 st.markdown("---")
 
@@ -1460,7 +1464,7 @@ if not st.session_state.started:
     st.stop()
 
 if st.session_state.completed:
-    st.success("세 수준을 모두 완료했습니다.")
+    st.success("모든 학습 수준을 완료했습니다.")
     st.balloons()
 
     # 학생 결과 화면에서는 현재 브라우저 세션의 기록만 표시한다.
@@ -1582,7 +1586,8 @@ if st.session_state.step >= len(steps):
     render_feedback(st.session_state.level_errors)
     st.markdown("---")
 
-    if st.session_state.level < 3:
+    # 기존의 < 3 을 < 6 으로 변경합니다! (총 6수준이 되었으므로)
+    if st.session_state.level < 6: 
         if st.button("피드백을 확인하고 다음 수준으로 이동", type="primary"):
             next_level()
             st.rerun()
