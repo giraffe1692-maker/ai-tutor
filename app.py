@@ -1567,6 +1567,17 @@ if st.session_state.completed:
                 file_name=f"{st.session_state.student_id}_ai_chat_log.csv",
                 mime="text/csv",
             )
+        if st.session_state.level == 3:
+            st.markdown("---")
+            st.info("💡 부도체 구 파트를 훌륭하게 마쳤습니다! 종합 분석을 확인했다면 새로운 유형인 '부도체 원기둥' 파트로 넘어갈 수 있습니다.")
+            if st.button("부도체 원기둥 학습(4수준) 시작하기", type="primary", use_container_width=True):
+                st.session_state.completed = False  # 다시 문제풀이 화면으로 돌아가기 위해 스위치 해제
+                st.session_state.level = 4
+                st.session_state.step = 0
+                st.session_state.hint_index = 0
+                st.session_state.attempts = 0
+                st.session_state.level_errors = []
+                st.rerun()
     st.stop()
 
 level_data = LEVELS[st.session_state.level]
@@ -1587,15 +1598,18 @@ if st.session_state.step >= len(steps):
     st.markdown("---")
 
     # 기존의 < 3 을 < 6 으로 변경합니다! (총 6수준이 되었으므로)
-    if st.session_state.level < 6: 
+    if st.session_state.level == 3:
+        if st.button("구대칭 파트(1~3수준) 종합 분석 보기", type="primary"):
+            st.session_state.completed = True # 종합 분석 화면 스위치 ON
+            st.rerun()
+    elif st.session_state.level < 6: 
         if st.button("피드백을 확인하고 다음 수준으로 이동", type="primary"):
             next_level()
             st.rerun()
     else:
-        if st.button("피드백을 확인하고 최종 결과 보기", type="primary"):
+        if st.button("원통대칭 파트(4~6수준) 최종 결과 보기", type="primary"):
             st.session_state.completed = True
             st.rerun()
-    st.stop()
 
 step = steps[st.session_state.step]
 choices = option_letter_map(step["options"])
