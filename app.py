@@ -462,9 +462,9 @@ LEVELS = {
                 "question": 'Q1. 적절한 대칭성과 가우스 면은?',
                 "options": [
                     ('평면대칭 · 필박스(pillbox)', 'C_S1', 'img/cylinder-lv1-1-4.PNG'),
-                    ('원통대칭 · 전하분포와 같은 중심축을 갖는 반지름 r, 길이 L의 닫힌 원통형 가우스 면', None, 'img/cylinder-lv1-1-1.PNG'),
+                    ('원통대칭 · 전하분포와 같은 중심축을 갖는 반지름 r, 길이 L의 닫힌 원통형 가우스 면', None, 'img/cylinder-lv1-1-2.PNG'),
                     ('원통대칭 · 반지름 r, 길이가 무한한 원통형 가우스 면', 'C_S1', 'img/cylinder-lv1-1-3.PNG'),
-                    ('구대칭 · 중심축 위의 한 점을 중심으로 하는 반지름 r의 구면', 'C_S1', 'img/cylinder-lv1-1-2.PNG'),
+                    ('구대칭 · 중심축 위의 한 점을 중심으로 하는 반지름 r의 구면', 'C_S1', 'img/cylinder-lv1-1-1.PNG'),
                 ],
                 "answer": '원통대칭 · 전하분포와 같은 중심축을 갖는 반지름 r, 길이 L의 닫힌 원통형 가우스 면',
                 "hints": [
