@@ -1105,9 +1105,11 @@ def save_log(level, step_id, response, correct, error_code, hint_count, attempt)
     if client is not None:
         try:
             client.table(TABLE_NAME).insert(row).execute()
+            # 저장에 성공했으므로 이전 오류 표시를 해제한다.
+            st.session_state.pop("db_error_response", None)
             return True
         except Exception as exc:
-            st.session_state["database_error"] = str(exc)
+            st.session_state["db_error_response"] = str(exc)
 
     # 개발용 또는 데이터베이스 장애 시 로컬 백업
     df = pd.DataFrame([row])
@@ -1124,7 +1126,7 @@ def save_log(level, step_id, response, correct, error_code, hint_count, attempt)
             df.to_csv(LOG_PATH, index=False, encoding="utf-8-sig")
         return False
     except Exception as exc:
-        st.session_state["database_error"] = str(exc)
+        st.session_state["db_error_response"] = str(exc)
         return False
 
 
@@ -1147,9 +1149,11 @@ def save_ai_chat_log(level, step_id, role, content, error_code="", selected_resp
     if client is not None:
         try:
             client.table(CHAT_TABLE_NAME).insert(row).execute()
+            # 저장에 성공했으므로 이전 오류 표시를 해제한다.
+            st.session_state.pop("db_error_chat", None)
             return True
         except Exception as exc:
-            st.session_state["database_error"] = str(exc)
+            st.session_state["db_error_chat"] = str(exc)
 
     path = Path("ai_chat_log.csv")
     df = pd.DataFrame([row])
@@ -1159,7 +1163,7 @@ def save_ai_chat_log(level, step_id, role, content, error_code="", selected_resp
         else:
             df.to_csv(path, index=False, encoding="utf-8-sig")
     except Exception as exc:
-        st.session_state["database_error"] = str(exc)
+        st.session_state["db_error_chat"] = str(exc)
     return False
 
 def load_all_chat_logs():
