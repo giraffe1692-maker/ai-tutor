@@ -833,8 +833,8 @@ def current_step_key(level, step_id):
 def build_tutor_context(level, level_data, step, selected_response=None, error_code=None):
     error_info = ERROR_FEEDBACK.get(error_code, {}) if error_code else {}
     options_text = "\n".join(
-        f"- {chr(65+i)}: {label}"
-        for i, (label, _) in enumerate(step["options"])
+        f"- {chr(65+i)}: {opt[0]}"
+        for i, opt in enumerate(step["options"])
     )
 
     return f"""
