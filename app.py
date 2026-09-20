@@ -1851,10 +1851,18 @@ if selected_letter:
     else:
         st.markdown(latex_to_markdown(selected_label))
 
+# 1. 현재 위치와 프론티어 위치 비교 로직 추가
+cur_idx, _ = seq_position(st.session_state.level, st.session_state.step)
+frontier_idx, _ = seq_position(st.session_state.frontier_level, st.session_state.frontier_step)
+
+# 현재 풀고 있는 문제가 이미 통과한 과거의 문제인지 확인
+is_past_problem = cur_idx < frontier_idx 
+
 c1, c2 = st.columns(2)
 
 with c1:
-    if st.button("정답 확인", type="primary", use_container_width=True, disabled=response is None):
+    # 2. 버튼 disabled 조건에 is_past_problem 추가
+    if st.button("정답 확인", type="primary", use_container_width=True, disabled=(response is None) or is_past_problem):
         st.session_state.attempts += 1
         correct = response == step["answer"]
         error_code = None if correct else choices[selected_letter]["error_code"]
@@ -1877,6 +1885,10 @@ with c1:
             st.session_state.level_errors.append(error_code)
 
         st.rerun()
+
+# 3. (선택 사항) 학생에게 버튼이 왜 비활성화되었는지 알려주는 안내 문구 추가
+if is_past_problem:
+    st.info("💡 이미 정답을 맞힌 문제입니다. 초기화 하려면 관리자에게 문의해주세요.")
 
 with c2:
     if st.button("힌트 보기", use_container_width=True):
