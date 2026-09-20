@@ -1897,9 +1897,14 @@ with c2:
         st.rerun()
 
 if st.session_state.hint_index > 0:
-    hint_text = step["hints"][st.session_state.hint_index - 1]
-    st.warning(f"힌트 {st.session_state.hint_index}")
-    st.markdown(latex_to_markdown(hint_text))
+    # 제목에 현재까지 열어본 힌트의 개수와 전체 힌트 개수를 함께 표시해 줍니다.
+    st.warning(f"힌트 ({st.session_state.hint_index}/{len(step['hints'])})")
+    
+    # 0부터 현재 hint_index까지 반복하며 힌트를 누적해서 출력합니다.
+    for i in range(st.session_state.hint_index):
+        hint_text = step["hints"][i]
+        # 각 힌트를 줄바꿈하여 순서대로 보여줍니다.
+        st.markdown(latex_to_markdown(f"**힌트 {i+1}.** {hint_text}"))
 
 if st.session_state.answered:
     if st.session_state.last_correct:
