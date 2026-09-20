@@ -1,4 +1,3 @@
-
 import streamlit as st
 import pandas as pd
 import re
@@ -767,8 +766,6 @@ LEVELS = {
     },
 }
 
-import re  # 파일 상단 import 구역에 없으면 추가
-
 def latex_to_markdown(text):
     """Convert \( \) and \[ \] delimiters to Streamlit-compatible math."""
     if not isinstance(text, str):
@@ -1065,6 +1062,199 @@ def render_ai_tutor(level, level_data, step, selected_response=None, error_code=
         )
 
 
+def get_track_range(level):
+    """레벨이 속한 트랙의 (시작, 끝) 레벨을 반환합니다. 1~3: 구, 4~6: 원기둥."""
+    return (1, 3) if level <= 3 else (4, 6)
+
+
+def get_student_progress(student_id, start_level, end_level):
+    """Supabase 로그를 바탕으로 학생이 해당 트랙에서 이어서 풀어야 할 (level, step)을 계산합니다.
+    해당 트랙에 기록이 전혀 없으면 None을 반환합니다.
+    트랙을 모두 완료했다면 (end_level, 해당 레벨의 전체 스텝 수)를 반환합니다."""
+    client = get_supabase_client()
+    if client is None or not student_id:
+        return None
+    try:
+        response = (
+            client.table(TABLE_NAME)
+            .select("level, step_id, correct")
+            .eq("student_id", student_id)
+            .execute()
+        )
+        rows = response.data or []
+    except Exception:
+        return None
+
+    if not rows:
+        return None
+
+    solved_by_level = {}
+    has_any_in_track = False
+    for row in rows:
+        try:
+            lvl = int(row.get("level"))
+        except (TypeError, ValueError):
+            continue
+        if lvl < start_level or lvl > end_level:
+            continue
+        has_any_in_track = True
+        correct_val = str(row.get("correct")).strip().lower()
+        if correct_val in ("true", "1"):
+            solved_by_level.setdefault(lvl, set()).add(str(row.get("step_id")))
+
+    if not has_any_in_track:
+        return None
+
+    # 레벨을 순서대로 확인하며, 처음으로 끝까지 다 풀지 못한 레벨과 스텝을 찾습니다.
+    for lvl in range(start_level, end_level + 1):
+        step_ids = [s["id"] for s in LEVELS[lvl]["steps"]]
+        solved_ids = solved_by_level.get(lvl, set())
+        solved_count = 0
+        for sid in step_ids:
+            if sid in solved_ids:
+                solved_count += 1
+            else:
+                break
+        if solved_count < len(step_ids):
+            return (lvl, solved_count)
+
+    # 트랙의 모든 레벨을 완료한 경우
+    return (end_level, len(LEVELS[end_level]["steps"]))
+
+
+def flatten_track(level):
+    """현재 레벨이 속한 트랙(구/원기둥)의 모든 (level, step_idx)를 순서대로 나열합니다."""
+    start, end = get_track_range(level)
+    seq = []
+    for lvl in range(start, end + 1):
+        for idx in range(len(LEVELS[lvl]["steps"])):
+            seq.append((lvl, idx))
+    return seq
+
+
+def clamp_step(level, step):
+    return max(0, min(step, len(LEVELS[level]["steps"]) - 1))
+
+
+def seq_position(level, step):
+    """트랙 내에서 (level, step)의 순번(0부터)과 전체 시퀀스를 반환합니다."""
+    seq = flatten_track(level)
+    target = (level, clamp_step(level, step))
+    try:
+        return seq.index(target), seq
+    except ValueError:
+        return len(seq) - 1, seq
+
+
+def go_to_position(level, step):
+    """내비게이터를 통해 특정 문제로 이동합니다 (현재 진행 상태만 바꾸고, 프론티어는 그대로 둡니다)."""
+    if level != st.session_state.level:
+        # 다른 레벨로 이동하면 이전 레벨의 오류 집계가 섞이지 않도록 초기화합니다.
+        st.session_state.level_errors = []
+    st.session_state.level = level
+    st.session_state.step = step
+    st.session_state.hint_index = 0
+    st.session_state.attempts = 0
+    st.session_state.answered = False
+    st.session_state.last_correct = None
+    st.session_state.latest_error = None
+
+
+def advance_frontier_if_needed():
+    """현재 위치가 지금까지 도달한 가장 먼 지점(프론티어)보다 앞서 있다면 프론티어를 갱신합니다."""
+    level = st.session_state.level
+    step = clamp_step(level, st.session_state.step)
+
+    if get_track_range(level) != get_track_range(st.session_state.frontier_level):
+        # 트랙이 바뀌었다면(예: 구 → 원기둥) 새 트랙의 첫 진입이므로 그대로 갱신합니다.
+        st.session_state.frontier_level = level
+        st.session_state.frontier_step = step
+        return
+
+    cur_idx, _ = seq_position(level, step)
+    frontier_idx, _ = seq_position(st.session_state.frontier_level, st.session_state.frontier_step)
+    if cur_idx > frontier_idx:
+        st.session_state.frontier_level = level
+        st.session_state.frontier_step = step
+
+
+def start_track(default_level):
+    """트랙 시작 버튼 처리: 로그인 상태면 이어풀기 위치로, 아니면 트랙 첫 문제부터 시작합니다."""
+    start_level, end_level = get_track_range(default_level)
+
+    progress = None
+    if st.session_state.get("started") and st.session_state.get("student_id"):
+        progress = get_student_progress(st.session_state.student_id, start_level, end_level)
+
+    if progress is not None:
+        resumed_level, resumed_step = progress
+        if resumed_step >= len(LEVELS[resumed_level]["steps"]):
+            # 이 트랙을 이미 모두 완료한 기록이 있는 경우 완료 화면으로 안내합니다.
+            st.session_state.level = resumed_level
+            st.session_state.step = resumed_step
+            st.session_state.frontier_level = resumed_level
+            st.session_state.frontier_step = len(LEVELS[resumed_level]["steps"]) - 1
+            st.session_state.completed = True
+            st.session_state["resume_message"] = (
+                "이전에 이 트랙을 모두 완료한 기록이 있습니다. 결과 화면으로 이동합니다."
+            )
+        else:
+            st.session_state.level = resumed_level
+            st.session_state.step = resumed_step
+            st.session_state.frontier_level = resumed_level
+            st.session_state.frontier_step = resumed_step
+            st.session_state.completed = False
+            st.session_state["resume_message"] = (
+                f"이전 학습 기록을 확인했습니다. {resumed_level}수준부터 이어서 시작합니다."
+            )
+        st.session_state.level_errors = []
+    else:
+        st.session_state.level = default_level
+        st.session_state.step = 0
+        st.session_state.frontier_level = default_level
+        st.session_state.frontier_step = 0
+        st.session_state.completed = False
+        st.session_state.level_errors = []
+        st.session_state.pop("resume_message", None)
+
+
+def render_step_navigator():
+    """지금까지 푼 문제 범위 안에서만 이전/다음으로 이동할 수 있는 상단 내비게이터."""
+    level = st.session_state.level
+    step = st.session_state.step
+    frontier_level = st.session_state.frontier_level
+    frontier_step = st.session_state.frontier_step
+
+    cur_idx, seq = seq_position(level, step)
+
+    same_track = get_track_range(level) == get_track_range(frontier_level)
+    if same_track:
+        frontier_idx, _ = seq_position(frontier_level, frontier_step)
+    else:
+        frontier_idx = cur_idx  # 안전장치: 트랙이 다르면 이동을 막습니다.
+
+    is_review_screen = step >= len(LEVELS[level]["steps"])  # 수준 완료(피드백) 화면 여부
+
+    nav_col1, nav_col2, nav_col3 = st.columns([1, 6, 1])
+    with nav_col1:
+        prev_disabled = cur_idx <= 0
+        if st.button("◀ 이전 문제", disabled=prev_disabled, use_container_width=True, key="nav_prev"):
+            prev_level, prev_step = seq[cur_idx - 1]
+            go_to_position(prev_level, prev_step)
+            st.rerun()
+    with nav_col3:
+        # 아직 도달하지 않은(안 푼) 문제로는 이동할 수 없고, 완료 화면에서도 다음 이동은 막습니다.
+        next_disabled = is_review_screen or cur_idx >= frontier_idx or cur_idx >= len(seq) - 1
+        if st.button("다음 문제 ▶", disabled=next_disabled, use_container_width=True, key="nav_next"):
+            next_pos_level, next_pos_step = seq[cur_idx + 1]
+            go_to_position(next_pos_level, next_pos_step)
+            st.rerun()
+    with nav_col2:
+        st.caption(
+            f"{cur_idx + 1} / {len(seq)}번째 문제 · 지금까지 푼 문제 범위 안에서만 이동할 수 있습니다."
+        )
+
+
 def init_state():
     defaults = {
         "student_id": "",
@@ -1073,6 +1263,8 @@ def init_state():
         "started": False,
         "level": 1,
         "step": 0,
+        "frontier_level": 1,
+        "frontier_step": 0,
         "hint_index": 0,
         "attempts": 0,
         "answered": False,
@@ -1351,6 +1543,7 @@ def reset_step():
     st.session_state.answered = False
     st.session_state.last_correct = None
     st.session_state.latest_error = None
+    advance_frontier_if_needed()
 
 def next_level():
     st.session_state.level += 1
@@ -1361,6 +1554,7 @@ def next_level():
     st.session_state.last_correct = None
     st.session_state.latest_error = None
     st.session_state.level_errors = []
+    advance_frontier_if_needed()
 
 def render_feedback(level_errors):
     st.markdown("## 수준별 진단 피드백")
@@ -1408,18 +1602,18 @@ col1, col2 = st.columns(2)
 
 with col1:
     if st.button("부도체 구 학습하기", use_container_width=True):
-        st.session_state.level = 1       # current_level이 아닌 level로 변경, 숫자 1
-        st.session_state.step = 0        # 1수준 첫 문제부터 시작하도록 초기화
-        st.session_state.completed = False
-        st.rerun() 
-        
+        start_track(1)   # 로그인 상태면 이어풀기 위치로, 아니면 1수준 처음부터
+        st.rerun()
+
 with col2:
     if st.button("부도체 원기둥 학습하기", use_container_width=True):
-        st.session_state.level = 4       # 원기둥 1수준인 4로 변경
-        st.session_state.step = 0        # 4수준 첫 문제부터 시작하도록 초기화
-        st.session_state.completed = False
+        start_track(4)   # 로그인 상태면 이어풀기 위치로, 아니면 4수준 처음부터
         st.rerun()
 st.markdown("---")
+
+_resume_message = st.session_state.pop("resume_message", None)
+if _resume_message:
+    st.info(_resume_message)
 
 if get_supabase_client() is None:
     st.warning(
@@ -1458,10 +1652,12 @@ with st.sidebar:
                 st.session_state.consent = True
                 st.session_state.session_uuid = str(uuid4())
                 st.session_state.started = True
+                # 상단에서 선택해둔 트랙(기본값: 구, 1수준) 기준으로 이어풀기 위치를 계산합니다.
+                start_track(st.session_state.level)
                 st.rerun()
     else:
         st.write(f"학습자: **{st.session_state.student_id}**")
-        st.write(f"현재 수준: **{st.session_state.level}/3**")
+        st.write(f"현재 수준: **{st.session_state.level}수준**")
         if st.button("처음부터 다시 시작", use_container_width=True):
             for key in list(st.session_state.keys()):
                 del st.session_state[key]
@@ -1585,11 +1781,15 @@ if st.session_state.completed:
                 st.session_state.hint_index = 0
                 st.session_state.attempts = 0
                 st.session_state.level_errors = []
+                st.session_state.frontier_level = 4
+                st.session_state.frontier_step = 0
                 st.rerun()
     st.stop()
 
 level_data = LEVELS[st.session_state.level]
 steps = level_data["steps"]
+
+render_step_navigator()
 
 st.subheader(level_data["title"])
 st.markdown(latex_to_markdown(level_data["problem"]))
