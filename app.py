@@ -517,7 +517,7 @@ LEVELS = {
                 ],
                 "answer": r"\(E(2\pi r L)\)",
                 "hints": [
-                    '끝면의 선속은 0입니다.',
+                    '가우스면의 위, 아래면 전기선속은 0입니다.',
                     '옆면에서는 전기장과 면적벡터가 나란하고, 전기장의 크기는 일정합니다.',
                     r"반지름 r, 길이 L인 원통의 옆면적은 \(2\pi r L\)입니다.",
                 ],
@@ -795,22 +795,32 @@ def render_question(text):
 def render_options(options):
     """Render option contents separately so LaTeX is not trapped inside st.radio."""
     letters = ["A", "B", "C", "D", "E", "F"]
-    for idx, opt in enumerate(options):
-        letter = letters[idx]
-        label = opt[0]
-        # 3번째 데이터(사진 경로)가 있으면 가져오고, 없으면 None으로 처리합니다.
-        img = opt[2] if len(opt) > 2 else None
+    
+    # 전체 선택지를 2개씩 묶어서 줄(row) 단위로 처리합니다.
+    for i in range(0, len(options), 2):
+        cols = st.columns(2)  # 한 줄에 2개의 컬럼 생성
         
-        with st.container(border=True):
-            st.markdown(f"**{letter}.**")
-            if is_formula_only(label):
-                st.latex(latex_body(label))
-            else:
-                st.markdown(latex_to_markdown(label))
+        # 왼쪽(cols[0])과 오른쪽(cols[1]) 컬럼에 각각 보기를 배치
+        for j in range(2):
+            if i + j < len(options):  # 선택지가 홀수 개인 경우를 위한 안전장치
+                idx = i + j
+                opt = options[idx]
+                letter = letters[idx]
+                label = opt[0]
+                # 3번째 데이터(사진 경로)가 있으면 가져오고, 없으면 None으로 처리
+                img = opt[2] if len(opt) > 2 else None
+                
+                with cols[j]:
+                    with st.container(border=True):
+                        st.markdown(f"**{letter}.**")
+                        if is_formula_only(label):
+                            st.latex(latex_body(label))
+                        else:
+                            st.markdown(latex_to_markdown(label))
 
-            # 보기 전용 사진이 존재할 경우에만 화면에 출력합니다.
-            if img:
-                st.image(img, use_container_width=True)
+                        # 보기 전용 사진이 존재할 경우에만 화면에 출력
+                        if img:
+                            st.image(img, use_container_width=True)
 
 def option_letter_map(options):
     letters = ["A", "B", "C", "D", "E", "F"]
