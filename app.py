@@ -1,6 +1,7 @@
 
 import streamlit as st
 import pandas as pd
+import re
 from supabase import create_client, Client
 from openai import OpenAI
 from datetime import datetime
@@ -766,11 +767,15 @@ LEVELS = {
     },
 }
 
+import re  # 파일 상단 import 구역에 없으면 추가
+
 def latex_to_markdown(text):
-    """Convert \( ... \) delimiters to Streamlit-compatible inline math."""
+    """Convert \( \) and \[ \] delimiters to Streamlit-compatible math."""
     if not isinstance(text, str):
         return str(text)
-    return text.replace(r"\(", "$").replace(r"\)", "$")
+    text = re.sub(r"\\\[(.*?)\\\]", r"$$\1$$", text, flags=re.DOTALL)
+    text = re.sub(r"\\\((.*?)\\\)", r"$\1$", text, flags=re.DOTALL)
+    return text
 
 def is_formula_only(text):
     """Return True when an option consists only of one LaTeX expression."""
