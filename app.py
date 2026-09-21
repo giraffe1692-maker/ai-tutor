@@ -476,7 +476,7 @@ LEVELS = {
             {
                 "id": 'c_flux_ends',
                 "question": 'Q2. 가우스 원통의 윗면과 아랫면을 통과하는 전기선속은 얼마이며, 그 이유는?',
-                "image": 'img/cylinder-lv1-1-2.PNG',
+                "image": 'img/cylinder-lv1-2.PNG',
                 "options": [
                     ('두 면의 선속 크기가 같고 부호가 반대이므로 합이 0이다.', 'C_F1'),
                     ('도선이 무한히 길기 때문에 끝면의 선속은 정의할 수 없다.', 'C_F1'),
@@ -1497,11 +1497,25 @@ def render_admin_dashboard():
     st.dataframe(student_summary, use_container_width=True, hide_index=True)
 
     st.subheader("전체 상세 학습 로그")
-    st.dataframe(logs, use_container_width=True, hide_index=True)
+    
+    # 1. 요청하신 학습자 ID 필터 추가 (대화 로그와 충돌하지 않게 key 지정)
+    main_student_filter = st.multiselect(
+        "학습자 ID 필터",
+        sorted(logs["student_id"].astype(str).unique().tolist()),
+        key="main_log_student_filter"
+    )
+
+    # 2. 필터 선택 여부에 따라 데이터 필터링
+    filtered_main_logs = logs.copy()
+    if main_student_filter:
+        filtered_main_logs = filtered_main_logs[filtered_main_logs["student_id"].astype(str).isin(main_student_filter)]
+
+    # 3. 필터링된 데이터를 표와 다운로드 버튼에 적용
+    st.dataframe(filtered_main_logs, use_container_width=True, hide_index=True)
 
     st.download_button(
         "전체 학습 로그 CSV 다운로드",
-        logs.to_csv(index=False).encode("utf-8-sig"),
+        filtered_main_logs.to_csv(index=False).encode("utf-8-sig"),
         file_name="gauss_learning_logs.csv",
         mime="text/csv",
     )
