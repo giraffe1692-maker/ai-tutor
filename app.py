@@ -476,7 +476,7 @@ LEVELS = {
             {
                 "id": 'c_flux_ends',
                 "question": 'Q2. 가우스 원통의 윗면과 아랫면을 통과하는 전기선속은 얼마이며, 그 이유는?',
-                "image": 'img/cylinder-lv1-2.PNG',
+                "image": 'img/cylinder-lv1-1-2.PNG',
                 "options": [
                     ('두 면의 선속 크기가 같고 부호가 반대이므로 합이 0이다.', 'C_F1'),
                     ('도선이 무한히 길기 때문에 끝면의 선속은 정의할 수 없다.', 'C_F1'),
