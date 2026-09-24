@@ -224,12 +224,13 @@ LEVELS = {
                 "id": 'symmetry',
                 "question": '적절한 대칭성과 가우스 면은?',
                 "options": [
-                    ('평면대칭 · 필박스', 'S1', 'img/sphere-lv1-1-3.png'),
+                    ('평면대칭 · 필박스(필박스는 표면과 수직인 축을 가진 작은 원통, 그림 참고)', 'S1', 'img/sphere-lv1-1-3.png'),
                     ('원통대칭 · 반지름 r의 원통면', 'S1', 'img/sphere-lv1-1-2.png'),
                     ('어떤 닫힌 면도 동일하다', 'S1'),
                     ('구대칭 · 중심이 같은 반지름 r의 구면', None, 'img/sphere-lv1-1-1.PNG'),
                 ],
                 "answer": '구대칭 · 중심이 같은 반지름 r의 구면',
+                "explanation": "전하가 구 전체에 균일하므로 중심에서 같은 거리의 모든 점에서 전기장 크기가 같고 방향은 반지름 방향이다(이 조건이 성립해야 E를 적분 밖으로 꺼낼 수 있다. 즉, 가우스 법칙을 사용할 수 있다). 원통면이나 필박스를 쓰면 면 위에서 E가 일정하지 않아 적분이 풀리지 않는다",
                 "hints": [
                     '중심에서 같은 거리의 모든 점을 생각하세요.',
                     '전하분포와 중심이 같은 면을 선택해야 합니다.',
@@ -238,7 +239,7 @@ LEVELS = {
             },
             {
                 "id": 'charge',
-                "question": r"\(r>R\)에서 포함 전하는?",
+                "question": r"\(r>R\)에서 포함 전하는(포함전하는 가우스 면 내부의 알짜 전하)?",
                 "image": 'img/sphere-lv1-2.PNG',
                 "options": [
                     (r"\(Q_{\mathrm{enc}}=Q(r^3/R^3)\)", 'Q1'),
@@ -247,6 +248,7 @@ LEVELS = {
                     (r"\(Q_{\mathrm{enc}}=Q(r/R)\)", 'Q1'),
                 ],
                 "answer": r"\(Q_{\mathrm{enc}}=Q\)",
+                "explanation": "가우스 면이 r>R이므로 부도체 전체를 둘러싼다. 그러므로 가우스 면 안에 있는 전체 전하는 Q이다. (참고: 비율식(r/R, r²/R², r³/R³)은 가우스 면이 대전체 **내부**에 있을 때 쓰는 식이다.)",
                 "hints": [
                     '가우스 면이 실제 구 전체를 둘러쌉니다.',
                     '일부가 아니라 전체 전하가 포함됩니다.',
@@ -263,6 +265,7 @@ LEVELS = {
                     (r"\(E(r)4\pi r^2\)", None),
                 ],
                 "answer": r"\(E(r)4\pi r^2\)",
+                "explanation": "가우스 면은 반지름 r의 닫힌 구면이고, 면 위 모든 점에서 E와 면적벡터가 나란하며 크기가 일정하다. 따라서 ∮E·dA = E∮dA = E·(구면적). 넓이는 가우스 면의 반지름 r로 계산하며, 대전체 반지름 R이 아니다.",
                 "hints": [
                     '가우스 면은 반지름 r인 구면입니다.',
                     '구면 전체의 넓이를 사용하세요.',
@@ -280,6 +283,7 @@ LEVELS = {
                     (r"\(E=0\)", 'M1'),
                 ],
                 "answer": r"\(E=\dfrac{Q}{4\pi\varepsilon_0r^2}\)",
+                "explanation": "E·4πr² = Q/ε₀를 E에 대해 정리한 결과이다. 외부에서는 전하가 중심에 모인 점전하와 동일한 전기장을 만든다.",
                 "hints": [
                     r"\(E4\pi r^2=Q/\varepsilon_0\)에서 E를 정리하세요.",
                     r"양변을 \(4\pi r^2\)로 나누세요.",
@@ -304,6 +308,7 @@ LEVELS = {
                     (r"\(0\le r<R\), \(r\ge R\)", None, 'img/sphere-lv2-1-1.png'),
                 ],
                 "answer": r"\(0\le r<R\), \(r\ge R\)",
+                "explanation": "영역을 나누는 기준은 **포함 전하식이 달라지는 지점**이다. r<R에서는 포함 전하가 Q보다 작으며, 표면 r=R을 지나는 순간 Qenc가 \"r에 따라 증가\"에서 \"일정\"으로 바뀐다.",
                 "hints": [
                     '포함 전하의 식이 바뀌는 경계를 찾으세요.',
                     '실제 구의 표면이 경계입니다.',
@@ -320,6 +325,7 @@ LEVELS = {
                     (r"\(\rho=\dfrac{Q}{(4/3)\pi R^3}\)", None),
                 ],
                 "answer": r"\(\rho=\dfrac{Q}{(4/3)\pi R^3}\)",
+                "explanation": "전하가 **부피 전체**에 균일하게 퍼져 있으므로 부피 전하밀도를 쓴다. 부피 전하 밀도는 (전하/부피)이다.",
                 "hints": [
                     '전하는 부피 전체에 분포합니다.',
                     '전체 전하를 전체 부피로 나눕니다.',
@@ -328,7 +334,7 @@ LEVELS = {
             },
             {
                 "id": 'inside_charge',
-                "question": r"\(r<R\)에서 포함 전하는?",
+                "question": r"\(r<R\)에서 포함 전하는(포함전하는 가우스 면 내부의 알짜 전하)?",
                 "image": 'img/sphere-lv2-3.PNG',
                 "options": [
                     (r"\(Q_{\mathrm{enc}}=Q\dfrac{r^2}{R^2}\)", 'Q3'),
@@ -337,6 +343,7 @@ LEVELS = {
                     (r"\(Q_{\mathrm{enc}}=Q\dfrac{r}{R}\)", 'Q3'),
                 ],
                 "answer": r"\(Q_{\mathrm{enc}}=Q\dfrac{r^3}{R^3}\)",
+                "explanation": "균일 분포에서 포함 전하는 포함 부피에 비례한다. 부피는 반지름의 세제곱에 비례하므로 (4/3)πr³ ÷ (4/3)πR³ = r³/R³((4/3)π는 약분된다). 참고: r²/R²는 넓이비라 틀리다.",
                 "hints": [
                     '포함 전하는 포함 부피에 비례합니다.',
                     '반지름 r과 R인 구의 부피비를 구하세요.',
@@ -354,6 +361,7 @@ LEVELS = {
                     (r"\(\begin{cases} E(r)=0, & 0\le r<R \\[6pt] E(r)=\dfrac{Q}{4\pi\varepsilon_0r^2}, & r\ge R \end{cases}\)", 'M2'),
                 ],
                 "answer": r"\(\begin{cases} E(r)=\dfrac{Qr}{4\pi\varepsilon_0R^3}, & 0\le r<R \\[6pt] E(r)=\dfrac{Q}{4\pi\varepsilon_0r^2}, & r\ge R \end{cases}\)",
+                "explanation": "1수준에서 구한 ∮E·dA=4πr²이라는 사실과 Qenc = Q·r³/R³이라는 사실을 통해 E를 구하면 내부에서 전기장 크기를 구할 수 있다. 내부는 Qenc∝r³인데 면적은 r²이라 E∝r³/r²=r. 부도체라 내부 전기장이 0이 아니며, 이 점이 도체와 결정적으로 다르다",
                 "hints": [
                     '내부에서는 Qenc∝r³입니다.',
                     '구면적은 r²에 비례합니다.',
@@ -370,6 +378,7 @@ LEVELS = {
                     ('모든 영역에서 선형 증가', 'G1', 'img/sphere-lv2-5-4.png'),
                 ],
                 "answer": '중심에서 0, 내부에서 선형 증가, 표면에서 최대, 외부에서 역제곱 감소',
+                "explanation": "두 식의 r 의존성을 그대로 읽은 것(이전 단계의 수식을 해석한 것). r=R에서 양쪽 모두 Q/(4πε₀R²)로 일치해 그래프가 끊기지 않는다. 이는 두 수식에 R을 대입하면 알 수 있다.",
                 "hints": [
                     '내부와 외부 식의 r 의존성을 확인하세요.',
                     '내부는 E∝r입니다.',
@@ -394,6 +403,7 @@ LEVELS = {
                     (r"\(0\le r<b\), \(r\ge b\)", 'R2'),
                 ],
                 "answer": r"\(0\le r<a\), \(a\le r<b\), \(r\ge b\)",
+                "explanation": "빈 공동(비어있다는 뜻)과 대전 영역, 바깥 공간에서 각각 포함 전하가 다르므로 세 영역이 필요하다",
                 "hints": [
                     '빈 공동과 바깥 표면을 모두 고려하세요.',
                     '경계는 r=a와 r=b입니다.',
@@ -410,6 +420,7 @@ LEVELS = {
                     (r"\(\rho=\dfrac{Q}{(4/3)\pi(b^3-a^3)}\)", None),
                 ],
                 "answer": r"\(\rho=\dfrac{Q}{(4/3)\pi(b^3-a^3)}\)",
+                "explanation": "전하가 있는 부피는 바깥 구에서 안쪽 공동을 뺀 껍질 부분이다. b³만 쓰면 비어 있는 공동까지 대전된 것으로 계산하게 된다.",
                 "hints": [
                     '반지름 a 안쪽은 비어 있습니다.',
                     '바깥 구 부피에서 안쪽 구 부피를 빼세요.',
@@ -426,6 +437,7 @@ LEVELS = {
                     (r"\(E=0\)", None),
                 ],
                 "answer": r"\(E=0\)",
+                "explanation": "가우스 법칙은 **면 내부의 전하만** 따진다. 공동을 감싸는 가우스 면 안에는 전하가 없으므로 Qenc=0이고, 구대칭이라 E가 균일하므로 E=0이 확정된다",
                 "hints": [
                     '가우스 면 내부에 전하가 있는지 확인하세요.',
                     '공동 내부에는 전하가 없습니다.',
@@ -434,7 +446,7 @@ LEVELS = {
             },
             {
                 "id": 'shell_charge',
-                "question": r"\(a\le r<b\)에서 포함 전하는?",
+                "question": r"\(a\le r<b\)에서 포함 전하는(포함전하는 가우스 면 내부의 알짜 전하)?",
                 "options": [
                     (r"\(Q_{\mathrm{enc}}=Q\)", 'Q6'),
                     (r"\(Q_{\mathrm{enc}}=Q\dfrac{r^3}{b^3}\)", 'Q6'),
@@ -442,6 +454,7 @@ LEVELS = {
                     (r"\(Q_{\mathrm{enc}}=Q\dfrac{r-a}{b-a}\)", 'Q6'),
                 ],
                 "answer": r"\(Q_{\mathrm{enc}}=Q\dfrac{r^3-a^3}{b^3-a^3}\)",
+                "explanation": "반지름 r인 가우스 면 안에서 실제로 대전된 부피는 r³이 아니라 (r³−a³)에 비례한다. 공동 부피를 반드시 빼야 한다. 따라서 Qenc = Q(4/3)π(r³−a³)/(4/3)π(b³−a³)이고, (4/3)π는 약분되어 Qenc = Q(r³−a³)/(b³−a³) 이다.",
                 "hints": [
                     '반지름 r인 구 전체가 대전된 것은 아닙니다.',
                     '빈 공동의 부피를 빼세요.',
@@ -458,6 +471,7 @@ LEVELS = {
                     (r"\(\begin{cases} E(r)=0, & 0\le r<a \\[6pt] E(r)=\dfrac{Q(r^3-a^3)}{4\pi\varepsilon_0r^2(b^3-a^3)}, & a\le r<b \\[10pt] E(r)=\dfrac{Q}{4\pi\varepsilon_0r^2}, & r\ge b \end{cases}\)", None),
                 ],
                 "answer": r"\(\begin{cases} E(r)=0, & 0\le r<a \\[6pt] E(r)=\dfrac{Q(r^3-a^3)}{4\pi\varepsilon_0r^2(b^3-a^3)}, & a\le r<b \\[10pt] E(r)=\dfrac{Q}{4\pi\varepsilon_0r^2}, & r\ge b \end{cases}\)",
+                "explanation": "세 영역의 Qenc(0, 부분, 전체)를 각각 E·4πr²=Qenc/ε₀에 넣은 결과이다. r>R인 상황에서는 포함 전하가 Q이므로 1수준과 같은 답이 나온다.",
                 "hints": [
                     '세 영역의 포함 전하는 0, 부분 전하, 전체 전하입니다.',
                     '각 영역에 가우스 법칙을 적용하세요.',
@@ -474,6 +488,7 @@ LEVELS = {
                     (r"\(r=b\)에서 0으로 불연속", 'C1'),
                 ],
                 "answer": r"\(r=a\)와 \(r=b\)에서 연속",
+                "explanation": "각 경계에 값을 대입하면 양쪽 식이 일치한다. 전기장이 불연속이 되려면 그 면에 **표면 전하**가 있어야 하는데, 여기서는 전하가 부피에 균일하게 퍼져 있어 그런 면이 없다",
                 "hints": [
                     '각 식에 r=a와 r=b를 대입하세요.',
                     '별도의 표면전하는 없습니다.',
@@ -485,19 +500,20 @@ LEVELS = {
     4: {
         "title": '4수준 · 균일 대전 부도체 원기둥의 외부 전기장 (원기둥 1수준)',
         "problem": r"""반지름이 \(R\)인 무한히 긴 원기둥 모양의 부도체에 균일한 부피 전하밀도 \(\rho\)로 전하가 분포되어 있다.
-중심축으로부터 \(r > R\)만큼 떨어진 지점의 전기장을 가우스 법칙으로 구하시오.""",
+중심축으로부터 \(r > R\)만큼 떨어진 지점의 전기장을 가우스 법칙으로 구하시오.(그림은 보기 쉽도록 무한한 원기둥의 단면적을 그린 그림입니다.)""",
         "image": 'img/cylinder-lv1.PNG',
         "steps": [
             {
                 "id": 'c_symmetry',
                 "question": 'Q1. 적절한 대칭성과 가우스 면은?',
                 "options": [
-                    ('평면대칭 · 필박스(pillbox)', 'C_S1', 'img/cylinder-lv1-1-4.PNG'),
+                    ('평면대칭 · 필박스(필박스는 표면과 수직인 축을 가진 작은 원통, 그림 참고)', 'C_S1', 'img/cylinder-lv1-1-4.PNG'),
                     ('원통대칭 · 전하분포와 같은 중심축을 갖는 반지름 r, 길이 L의 닫힌 원통형 가우스 면', None, 'img/cylinder-lv1-1-2.PNG'),
                     ('원통대칭 · 반지름 r, 길이가 무한한 원통형 가우스 면', 'C_S1', 'img/cylinder-lv1-1-3.PNG'),
                     ('구대칭 · 중심축 위의 한 점을 중심으로 하는 반지름 r의 구면', 'C_S1', 'img/cylinder-lv1-1-1.PNG'),
                 ],
                 "answer": '원통대칭 · 전하분포와 같은 중심축을 갖는 반지름 r, 길이 L의 닫힌 원통형 가우스 면',
+                "explanation": "중심축에서 같은 거리면 E 크기가 같고 방향은 축에서 바깥쪽이다. 전하분포는 무한히 길지만 가우스 면은 **유한한 L**로 잡아야 한다. L은 최종 식에서 약분되어 사라진다. 가우스 면을 무한하게 잡으면 가우스 법칙을 사용할 수 없으며, 유한하게 잡더라도 멀리 떨어진 전하로부터 받는 힘이 0에 수렴하기 때문에 문제가 되지 않는다.",
                 "hints": [
                     '중심축에서 거리가 같은 모든 점에서 전기장의 크기가 같은지 생각하세요.',
                     '전하분포 자체는 무한히 길지만, 가우스 면은 계산을 위해 임의의 유한한 길이 L로 선택합니다.',
@@ -515,6 +531,7 @@ LEVELS = {
                     ('각각 0이다. 전기장과 각 끝면의 면적벡터가 서로 수직이기 때문이다.', None),
                 ],
                 "answer": '각각 0이다. 전기장과 각 끝면의 면적벡터가 서로 수직이기 때문이다.',
+                "explanation": "가우스 면(원통 모양 점선) 위, 아래면의 면적벡터는 축 방향인데 E는 축에 수직인 방사 방향이라 내적이 0이다. \"크기가 같고 부호가 반대\"라는 선택지는 두 끝면에 0이 아닌 선속이 있다는 뜻이라 물리적으로 다르다",
                 "hints": [
                     '무한히 긴 균일 대전 원기둥의 전기장은 중심축에서 바깥쪽으로 향합니다.',
                     '끝면의 면적벡터는 중심축 방향입니다.',
@@ -531,6 +548,7 @@ LEVELS = {
                     (r"\(Q_{\mathrm{enc}} = \rho\pi r^2 L\)", 'C_V2'),
                 ],
                 "answer": r"\(Q_{\mathrm{enc}} = \rho\pi R^2 L\)",
+                "explanation": "r>R이므로 길이 L 구간의 부도체가 전부 들어온다. 실제 전하가 있는 단면은 πR²이며, 가우스 면 단면 πr²이 아니다",
                 "hints": [
                     '포함 전하는 (부피 전하밀도) × (가우스 면 안에 실제로 존재하는 대전체의 부피)입니다.',
                     '전하는 반지름 R까지의 실제 부도체 원기둥에만 분포합니다.',
@@ -547,6 +565,7 @@ LEVELS = {
                     (r"\(E(2\pi r L)\)", None),
                 ],
                 "answer": r"\(E(2\pi r L)\)",
+                "explanation": "위, 아래면의 기여가 0이므로 옆면만 남는다. 옆면에서 E는 면에 수직이고 크기가 일정하므로 E×(옆넓이 2πrL)",
                 "hints": [
                     '가우스면의 위, 아래면 전기선속은 0입니다.',
                     '옆면에서는 전기장과 면적벡터가 나란하고, 전기장의 크기는 일정합니다.',
@@ -563,6 +582,7 @@ LEVELS = {
                     (r"\(E = 0\)", 'C_E1'),
                 ],
                 "answer": r"\(E = \dfrac{\rho R^2}{2\varepsilon_0 r}\)",
+                "explanation": "E(2πrL) = ρπR²L/ε₀에서 π와 L이 약분된다. 외부는 1/r 감소이며, 구의 1/r²와 다른 점에 유의해야 한다.",
                 "hints": [
                     r"가우스 법칙 \(E(2\pi r L) = Q_{\mathrm{enc}}/\varepsilon_0\)을 사용하세요.",
                     r"\(Q_{\mathrm{enc}} = \rho\pi R^2 L\)을 대입하세요.",
@@ -587,6 +607,7 @@ LEVELS = {
                     (r"\(0 \le r < R/2\), \(r \ge R/2\)", 'C_B1', 'img/cylinder-lv2-1-2.PNG'),
                 ],
                 "answer": r"\(0 \le r < R\), \(r \ge R\)",
+                "explanation": "원기둥 표면에서 포함 전하식이 바뀐다. 2수준 1단계와 같은 논리.",
                 "hints": [
                     '포함 전하의 식이 바뀌는 경계를 찾으세요.',
                     '실제 부도체 원기둥의 표면이 경계입니다.',
@@ -595,7 +616,7 @@ LEVELS = {
             },
             {
                 "id": 'c_charge_in',
-                "question": r"Q2. \(r < R\)에서 포함 전하는?",
+                "question": r"Q2. \(r < R\)에서 포함 전하는(포함전하는 가우스 면 내부의 알짜 전하)?",
                 "options": [
                     (r"\(Q_{\mathrm{enc}} = \rho\pi r^2 L\)", None),
                     (r"\(Q_{\mathrm{enc}} = 0\)", 'C_V1'),
@@ -603,6 +624,7 @@ LEVELS = {
                     (r"\(Q_{\mathrm{enc}} = \rho\pi R^2 L\)", 'C_V1'),
                 ],
                 "answer": r"\(Q_{\mathrm{enc}} = \rho\pi r^2 L\)",
+                "explanation": "가우스 면 전체가 대전체 안에 있으므로 면 내부가 전부 전하로 채워져 있다. 따라서 단면적은 πr²",
                 "hints": [
                     '가우스 면의 반지름은 r입니다.',
                     '반지름 r, 길이 L인 가상의 원통 내부에 실제 전하가 채워져 있습니다.',
@@ -619,6 +641,7 @@ LEVELS = {
                     (r"\(E(2\pi r L)\)", None),
                 ],
                 "answer": r"\(E(2\pi r L)\)",
+                "explanation": "내부든 외부든 가우스 면 모양이 같으므로 선속 표현도 동일하다. 달라지는 것은 Qenc뿐이다",
                 "hints": [
                     '원통대칭에서는 옆면의 면적을 이용합니다.',
                     '끝면의 선속은 0입니다.',
@@ -635,6 +658,7 @@ LEVELS = {
                     (r"\(E = \dfrac{\rho R^2}{2\varepsilon_0 r}\)", 'C_B1'),
                 ],
                 "answer": r"\(E = \dfrac{\rho r}{2\varepsilon_0}\)",
+                "explanation": "E(2πrL)=ρπr²L/ε₀에서 정리하면 r이 하나 남는다. 내부는 E∝r로 선형 증가",
                 "hints": [
                     r"\(E(2\pi r L) = \rho\pi r^2 L/\varepsilon_0\)을 사용하세요.",
                     '양변에서 π와 L을 소거하세요.',
@@ -651,6 +675,7 @@ LEVELS = {
                     (r"\(\begin{cases} E(r) = \dfrac{\rho}{2\varepsilon_0}, & 0 \le r < R \\[6pt] E(r) = \dfrac{\rho R^2}{2\varepsilon_0 r^2}, & r \ge R \end{cases}\)", 'C_E1'),
                 ],
                 "answer": r"\(\begin{cases} E(r) = \dfrac{\rho r}{2\varepsilon_0}, & 0 \le r < R \\[6pt] E(r) = \dfrac{\rho R^2}{2\varepsilon_0 r}, & r \ge R \end{cases}\)",
+                "explanation": "r=R을 대입하면 양쪽 모두 ρR/(2ε₀)로 일치한다",
                 "hints": [
                     '내부에서는 E ∝ r, 외부에서는 E ∝ 1/r입니다.',
                     'r = R에서 두 식이 같은 값을 주는지 확인하세요.',
@@ -667,6 +692,7 @@ LEVELS = {
                     ('내부에서 항상 0이고 외부에서만 1/r로 감소한다.', 'C_B1', 'img/cylinder-lv2-6-3.png'),
                 ],
                 "answer": '중심에서 0, 내부에서 선형 증가, 표면에서 최대, 외부에서 1/r로 감소한다.',
+                "explanation": "외부가 1/r²가 아닌 이유는 가우스 면 넓이가 r²이 아니라 r에 비례하기 때문이다",
                 "hints": [
                     r"내부식 \(E = \dfrac{\rho r}{2\varepsilon_0}\)의 r 의존성을 확인하세요.",
                     r"외부식 \(E = \dfrac{\rho R^2}{2\varepsilon_0 r}\)의 r 의존성을 확인하세요.",
@@ -691,6 +717,7 @@ LEVELS = {
                     (r"\(0 \le r < a\), \(a \le r < b\), \(r \ge b\)", None),
                 ],
                 "answer": r"\(0 \le r < a\), \(a \le r < b\), \(r \ge b\)",
+                "explanation": "안쪽 공동(비어있다는 뜻), 대전된 껍질, 바깥 공간 세 영역",
                 "hints": [
                     '포함 전하의 형태가 달라지는 경계를 찾으세요.',
                     '전하는 a에서 b 사이에만 존재합니다.',
@@ -707,6 +734,7 @@ LEVELS = {
                     (r"\(Q_{\mathrm{enc}} = \rho\pi a^2 L\), \(E = \dfrac{\rho a^2}{2\varepsilon_0 r}\)", 'C_V1'),
                 ],
                 "answer": r"\(Q_{\mathrm{enc}} = 0\), \(E = 0\)",
+                "explanation": "공동 안에는 전하가 없다. 껍질에 전하가 있어도 가우스 면 **밖**의 전하는 내부 전기장에 기여하지 않는다",
                 "hints": [
                     '전하는 r < a 영역에는 존재하지 않습니다.',
                     '가우스 면 내부에 실제 전하가 있는지 확인하세요.',
@@ -715,7 +743,7 @@ LEVELS = {
             },
             {
                 "id": 'c_shell_mid_charge',
-                "question": r"Q3. \(a \le r < b\)에서 포함 전하는?",
+                "question": r"Q3. \(a \le r < b\)에서 포함 전하는(포함전하는 가우스 면 내부의 알짜 전하)?",
                 "options": [
                     (r"\(Q_{\mathrm{enc}} = \rho\pi(r-a)^2 L\)", 'C_V2'),
                     (r"\(Q_{\mathrm{enc}} = \rho\pi r^2 L\)", 'C_V2'),
@@ -723,6 +751,7 @@ LEVELS = {
                     (r"\(Q_{\mathrm{enc}} = \rho\pi(b^2-a^2)L\)", 'C_V2'),
                 ],
                 "answer": r"\(Q_{\mathrm{enc}} = \rho\pi(r^2-a^2)L\)",
+                "explanation": "가우스 면 안이지만 반지름 a 이내는 비어 있으므로 그 단면적을 뺀다",
                 "hints": [
                     '가우스 면 안의 반지름 r까지 모든 공간에 전하가 있는 것은 아닙니다.',
                     '반지름 a 내부의 빈 공간을 제외해야 합니다.',
@@ -739,6 +768,7 @@ LEVELS = {
                     (r"\(E = 0\)", 'C_V1'),
                 ],
                 "answer": r"\(E = \dfrac{\rho(r^2-a^2)}{2\varepsilon_0 r}\)",
+                "explanation": "E(2πrL) = ρπ(r²−a²)L/ε₀를 정리한 결과. r=a에서 0이고 r이 커질수록 증가한다",
                 "hints": [
                     r"\(E(2\pi r L) = \rho\pi(r^2-a^2)L/\varepsilon_0\)을 사용하세요.",
                     r"가우스 면의 옆면적은 \(2\pi r L\)입니다.",
@@ -747,7 +777,7 @@ LEVELS = {
             },
             {
                 "id": 'c_shell_out_charge',
-                "question": r"Q5. \(r \ge b\)에서 포함 전하는?",
+                "question": r"Q5. \(r \ge b\)에서 포함 전하는(포함전하는 가우스 면 내부의 알짜 전하)?",
                 "options": [
                     (r"\(Q_{\mathrm{enc}} = \rho\pi(r^2-a^2)L\)", 'C_V2'),
                     (r"\(Q_{\mathrm{enc}} = \rho\pi(b^2-a^2)L\)", None),
@@ -755,6 +785,7 @@ LEVELS = {
                     (r"\(Q_{\mathrm{enc}} = \rho\pi r^2 L\)", 'C_V2'),
                 ],
                 "answer": r"\(Q_{\mathrm{enc}} = \rho\pi(b^2-a^2)L\)",
+                "explanation": "대전체 전체가 포함되므로 r에 무관한 상수가 된다",
                 "hints": [
                     'r ≥ b이면 가우스 면이 대전체 전체를 둘러쌉니다.',
                     '전하가 있는 부분은 반지름 a와 b 사이의 원통껍질입니다.',
@@ -771,6 +802,7 @@ LEVELS = {
                     (r"\(E = \dfrac{\rho r}{2\varepsilon_0}\)", 'C_E1'),
                 ],
                 "answer": r"\(E = \dfrac{\rho(b^2-a^2)}{2\varepsilon_0 r}\)",
+                "explanation": "Qenc가 고정되고 면적만 r에 비례해 커지므로 E∝1/r",
                 "hints": [
                     '가우스 면이 포함하는 전하는 이제 r에 따라 변하지 않습니다.',
                     r"\(E(2\pi r L) = \rho\pi(b^2-a^2)L/\varepsilon_0\)을 사용하세요.",
@@ -787,6 +819,7 @@ LEVELS = {
                     (r"모든 영역에서 \(E = \dfrac{\rho(b^2-a^2)}{2\varepsilon_0 r}\)", 'C_B1'),
                 ],
                 "answer": r"\(\begin{cases} E = 0, & 0 \le r < a \\[6pt] E = \dfrac{\rho(r^2-a^2)}{2\varepsilon_0 r}, & a \le r < b \\[10pt] E = \dfrac{\rho(b^2-a^2)}{2\varepsilon_0 r}, & r \ge b \end{cases}\)",
+                "explanation": "r=a에서 0, r=b에서 중간식과 외부식이 일치해 전 구간에서 연속이다",
                 "hints": [
                     '각 영역에서 포함 전하가 어떻게 달라지는지 순서대로 확인하세요.',
                     'r = a에서 E = 0이어야 합니다.',
@@ -2011,6 +2044,10 @@ if st.session_state.hint_index > 0:
 if st.session_state.answered:
     if st.session_state.last_correct:
         st.success("정답입니다.")
+        explanation = step.get("explanation")
+        if explanation:
+            with st.expander("이 답이 정답인 이유", expanded=True):
+                st.markdown(latex_to_markdown(explanation))
         if st.button("다음 단계", type="primary"):
             reset_step()
             st.rerun()
