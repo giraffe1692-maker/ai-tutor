@@ -37,6 +37,7 @@ CHAT_TABLE_NAME = "ai_chat_logs"
 
 # 연구 기간 내내 고정할 모델. 변경 시 논문 방법론에도 함께 기록할 것.
 DEFAULT_AI_MODEL = "gpt-5.6-luna"
+AI_USAGE_LIMIT = 30
 
 # Supabase에 ai_chat_logs 테이블이 없을 때 안내할 생성용 SQL
 CHAT_TABLE_SQL = """create table if not exists public.ai_chat_logs (
@@ -239,7 +240,7 @@ LEVELS = {
             },
             {
                 "id": 'charge',
-                "question": r"\(r>R\)에서 포함 전하는(포함전하는 가우스 면 내부의 알짜 전하)?",
+                "question": r"\(r>R\)에서 포함 전하는?(포함전하는 가우스 면 내부의 알짜 전하)",
                 "image": 'img/sphere-lv1-2.PNG',
                 "options": [
                     (r"\(Q_{\mathrm{enc}}=Q(r^3/R^3)\)", 'Q1'),
@@ -334,7 +335,7 @@ LEVELS = {
             },
             {
                 "id": 'inside_charge',
-                "question": r"\(r<R\)에서 포함 전하는(포함전하는 가우스 면 내부의 알짜 전하)?",
+                "question": r"\(r<R\)에서 포함 전하는?(포함전하는 가우스 면 내부의 알짜 전하)",
                 "image": 'img/sphere-lv2-3.PNG',
                 "options": [
                     (r"\(Q_{\mathrm{enc}}=Q\dfrac{r^2}{R^2}\)", 'Q3'),
@@ -446,7 +447,7 @@ LEVELS = {
             },
             {
                 "id": 'shell_charge',
-                "question": r"\(a\le r<b\)에서 포함 전하는(포함전하는 가우스 면 내부의 알짜 전하)?",
+                "question": r"\(a\le r<b\)에서 포함 전하는?(포함전하는 가우스 면 내부의 알짜 전하)",
                 "options": [
                     (r"\(Q_{\mathrm{enc}}=Q\)", 'Q6'),
                     (r"\(Q_{\mathrm{enc}}=Q\dfrac{r^3}{b^3}\)", 'Q6'),
@@ -523,7 +524,7 @@ LEVELS = {
             {
                 "id": 'c_flux_ends',
                 "question": 'Q2. 가우스 원통의 윗면과 아랫면을 통과하는 전기선속은 얼마이며, 그 이유는?',
-                "image": 'img/cylinder-lv1-2.PNG',
+                "image": 'img/cylinder-lv1-1-2.PNG',
                 "options": [
                     ('두 면의 선속 크기가 같고 부호가 반대이므로 합이 0이다.', 'C_F1'),
                     ('도선이 무한히 길기 때문에 끝면의 선속은 정의할 수 없다.', 'C_F1'),
@@ -616,7 +617,7 @@ LEVELS = {
             },
             {
                 "id": 'c_charge_in',
-                "question": r"Q2. \(r < R\)에서 포함 전하는(포함전하는 가우스 면 내부의 알짜 전하)?",
+                "question": r"Q2. \(r < R\)에서 포함 전하는?(포함전하는 가우스 면 내부의 알짜 전하)",
                 "options": [
                     (r"\(Q_{\mathrm{enc}} = \rho\pi r^2 L\)", None),
                     (r"\(Q_{\mathrm{enc}} = 0\)", 'C_V1'),
@@ -743,7 +744,7 @@ LEVELS = {
             },
             {
                 "id": 'c_shell_mid_charge',
-                "question": r"Q3. \(a \le r < b\)에서 포함 전하는(포함전하는 가우스 면 내부의 알짜 전하)?",
+                "question": r"Q3. \(a \le r < b\)에서 포함 전하는?(포함전하는 가우스 면 내부의 알짜 전하)",
                 "options": [
                     (r"\(Q_{\mathrm{enc}} = \rho\pi(r-a)^2 L\)", 'C_V2'),
                     (r"\(Q_{\mathrm{enc}} = \rho\pi r^2 L\)", 'C_V2'),
@@ -777,7 +778,7 @@ LEVELS = {
             },
             {
                 "id": 'c_shell_out_charge',
-                "question": r"Q5. \(r \ge b\)에서 포함 전하는(포함전하는 가우스 면 내부의 알짜 전하)?",
+                "question": r"Q5. \(r \ge b\)에서 포함 전하는?(포함전하는 가우스 면 내부의 알짜 전하)",
                 "options": [
                     (r"\(Q_{\mathrm{enc}} = \rho\pi(r^2-a^2)L\)", 'C_V2'),
                     (r"\(Q_{\mathrm{enc}} = \rho\pi(b^2-a^2)L\)", None),
@@ -1077,9 +1078,9 @@ def render_ai_tutor(level, level_data, step, selected_response=None, error_code=
         if not clean_message:
             return
 
-        if st.session_state.ai_usage_count >= 20:
+        if st.session_state.ai_usage_count >= AI_USAGE_LIMIT:
             st.warning(
-                "현재 학습 세션의 AI 튜터 사용 한도 20회에 도달했습니다."
+                "현재 학습 세션의 AI 튜터 사용 한도 {AI_USAGE_LIMIT}회에 도달했습니다."
             )
             return
 
@@ -1146,7 +1147,7 @@ def render_ai_tutor(level, level_data, step, selected_response=None, error_code=
             st.rerun()
     with col_usage:
         st.caption(
-            f"이 세션의 AI 튜터 사용: {st.session_state.ai_usage_count}/20회"
+            f"이 세션의 AI 튜터 사용: {st.session_state.ai_usage_count}/{AI_USAGE_LIMIT}회"
         )
 
 
