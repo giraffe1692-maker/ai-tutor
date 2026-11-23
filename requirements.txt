@@ -2,3 +2,4 @@ starlette<1.4.0
 pandas>=2.0
 supabase>=2.4
 openai>=1.40
+openpyxl
