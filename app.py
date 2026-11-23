@@ -1708,6 +1708,362 @@ STEP_STAGES = {
     'c_shell_out_field': (9,), 'c_shell_final': (9, 10),
 }
 
+def _build_code_stages():
+    """(수준, 오류코드) → 해당 단계들.
+    step id가 없는 예전 기록(세션에 남아 있던 문자열 전용 기록)을 위한 보조 매핑."""
+    mapping = {}
+    for lv, data in LEVELS.items():
+        for s in data["steps"]:
+            stages = STEP_STAGES.get(s["id"], ())
+            for opt in s.get("options", []):
+                code = opt[1] if len(opt) > 1 else None
+                if code:
+                    mapping.setdefault((lv, code), set()).update(stages)
+    return mapping
+
+
+CODE_STAGES = _build_code_stages()
+
+
+def stages_of(level, step_id, code):
+    """오류 하나가 어느 풀이 단계에서 났는지 돌려준다."""
+    if step_id and step_id in STEP_STAGES:
+        return STEP_STAGES[step_id]
+    return tuple(sorted(CODE_STAGES.get((level, code), ())))
+
+
+# ---------------------------------------------------------------------------
+# 참고자료: 선행 연구·선행 학생 사례 기반 어려움 표 (GitHub의 엑셀 파일)
+# ---------------------------------------------------------------------------
+# GitHub에 올린 엑셀의 raw 주소. 저장소를 옮기면 이 값만 바꾸면 된다.
+# (또는 .streamlit/secrets.toml 에
+#      [reference]
+#      xlsx_url = "https://raw.githubusercontent.com/.../reference.xlsx"
+#  를 넣으면 코드 수정 없이 교체된다.)
+REFERENCE_XLSX_URL = (
+    "https://raw.githubusercontent.com/"
+    "GITHUB_ID/REPO_NAME/main/reference/gauss_difficulty_reference.xlsx"
+)
+
+REFERENCE_SHEET_STAGE = "단계별_어려움"    # 논문 기반 10단계 예상 어려움
+REFERENCE_SHEET_CASE = "선행사례_오답"      # 선행 학생들의 오답 기반 어려움 분석
+REFERENCE_SHEET_TYPE = "어려움_유형"        # 어려움 유형 분류 체계
+
+
+def reference_xlsx_url():
+    try:
+        url = str(st.secrets["reference"]["xlsx_url"]).strip()
+        if url:
+            return url
+    except Exception:
+        pass
+    return REFERENCE_XLSX_URL
+
+
+@st.cache_data(ttl=3600, show_spinner=False)
+def load_reference_tables(url):
+    """GitHub의 엑셀을 읽어 시트별 DataFrame 딕셔너리로 돌려준다.
+    (url을 인자로 받아야 주소가 바뀔 때 캐시가 갱신된다.)"""
+    import io
+    from urllib.request import urlopen
+
+    try:
+        with urlopen(url, timeout=20) as resp:
+            raw = resp.read()
+        sheets = pd.read_excel(io.BytesIO(raw), sheet_name=None)
+    except Exception as exc:
+        return None, f"참고자료 엑셀을 읽지 못했습니다: {exc}"
+
+    cleaned = {}
+    for name, df in sheets.items():
+        df = df.fillna("")
+        df.columns = [str(c).strip() for c in df.columns]
+        cleaned[str(name).strip()] = df
+    return cleaned, None
+
+
+def build_reference_context(level, stage_numbers, max_cases=12):
+    """이번 수준에서 오류가 난 단계에 해당하는 참고자료만 추려 텍스트로 만든다."""
+    tables, err = load_reference_tables(reference_xlsx_url())
+    if tables is None:
+        return "", err
+
+    blocks = []
+
+    df = tables.get(REFERENCE_SHEET_STAGE)
+    if df is not None and len(df) and stage_numbers:
+        want = {str(n) for n in stage_numbers}
+        lines = []
+        for _, row in df.iterrows():
+            no = str(row.get("단계번호", "")).split(".")[0].strip()
+            if no in want:
+                lines.append(
+                    f"- {no}단계 {row.get('단계', '')}: "
+                    f"예상되는 어려움 — {row.get('예상되는 어려움', '')}"
+                )
+        if lines:
+            blocks.append(
+                "[선행 연구 기반, 이 단계에서 흔히 나타나는 어려움]\n" + "\n".join(lines)
+            )
+
+    df = tables.get(REFERENCE_SHEET_CASE)
+    if df is not None and len(df) and "수준" in df.columns:
+        same = df[df["수준"].astype(str).str.split(".").str[0].str.strip() == str(level)]
+        if "문제 풀이 단계" in df.columns and stage_numbers:
+            stage_titles = {t for n, t, _ in SOLVING_STAGES if n in set(stage_numbers)}
+            pat = "|".join(re.escape(t) for t in stage_titles) if stage_titles else None
+            other = df[df["문제 풀이 단계"].astype(str).str.contains(pat, na=False)] if pat else df.iloc[0:0]
+            picked = pd.concat([same, other]).drop_duplicates()
+        else:
+            picked = same
+        lines = []
+        for _, row in picked.head(max_cases).iterrows():
+            lines.append(
+                f"- ({row.get('수준', '')}수준-{str(row.get('번호', '')).split('.')[0]}) "
+                f"{row.get('문제 내용', '')} / 단계: {row.get('문제 풀이 단계', '')} / "
+                f"어려움: {row.get('학생의 어려움', '')} / 유형: {row.get('어려움 유형', '')}"
+            )
+        if lines:
+            blocks.append(
+                "[같은 앱을 사용한 선행 학생들이 이 지점에서 보인 어려움]\n" + "\n".join(lines)
+            )
+
+    df = tables.get(REFERENCE_SHEET_TYPE)
+    if df is not None and len(df):
+        lines = [
+            f"- {row.get('범주', '')} / {row.get('유형', '')}: {row.get('설명', '')}"
+            for _, row in df.iterrows()
+        ]
+        blocks.append("[어려움 유형 분류 체계]\n" + "\n".join(lines))
+
+    if not blocks:
+        return "", "참고자료에서 이번 수준에 해당하는 항목을 찾지 못했습니다."
+    return "\n\n".join(blocks), None
+
+
+# ---------------------------------------------------------------------------
+# 수준별 AI 종합 피드백
+# ---------------------------------------------------------------------------
+def level_summary_system_prompt():
+    return (
+        "너는 대학 1학년 전자기학 가우스 법칙 단원을 가르치는 물리교육 전문 튜터이다.\n"
+        "한 수준(레벨)을 끝낸 학생의 학습 로그를 받아, 그 학생에게 직접 건네는 "
+        "종합 피드백을 한국어로 작성하라.\n\n"
+        "규칙:\n"
+        "1. 반드시 다음 세 소제목을 그대로 쓰고, 그 순서를 지켜라.\n"
+        "   **이번 수준에서 보인 어려움** / **원인 분석** / **다음 수준을 위한 개선 사항**\n"
+        "2. '어려움'에는 학생이 실제로 틀린 문항과 그 풀이 단계만 근거로 써라. "
+        "로그에 없는 내용을 추측해 단정하지 마라.\n"
+        "3. '원인 분석'에서는 제공된 참고자료(선행 연구 기반 예상 어려움, 선행 학생 사례, "
+        "어려움 유형 분류)를 활용해 이 학생의 오답이 어떤 유형에 가까운지 설명하라. "
+        "유형 이름은 참고자료의 표현을 그대로 사용하라.\n"
+        "4. '개선 사항'은 학생이 바로 실천할 수 있는 2~3개의 구체적 행동으로 쓰라. "
+        "'열심히 하라' 같은 막연한 말은 금지한다.\n"
+        "5. 수식은 $E = \\frac{Q}{4\\pi\\varepsilon_0 r^2}$ 처럼 LaTeX로 쓰라.\n"
+        "6. 정답 자체를 다시 알려주지는 말고, 어떻게 생각해야 했는지를 설명하라.\n"
+        "7. 전체 길이는 400~600자 정도로, 평서문 존댓말로 쓰라. "
+        "학생을 평가하거나 질책하지 말고 담담하게 설명하라.\n"
+        "8. 오류가 전혀 없는 학생에게는 잘한 점을 근거와 함께 짚고, "
+        "다음 수준에서 주의할 단계를 안내하라."
+    )
+
+
+def build_level_summary_context(level, pairs, stage_numbers):
+    """학생의 이번 수준 학습 로그를 프롬프트용 텍스트로 정리한다."""
+    data = LEVELS[level]
+    lines = [
+        f"수준: {level}수준 — {data.get('title', '')}",
+        f"문제 상황: {data.get('problem', '')}" if data.get("problem") else "",
+        f"총 문항 수: {len(data['steps'])}개",
+    ]
+
+    step_titles = {s["id"]: s for s in data["steps"]}
+    if pairs:
+        lines.append(f"\n오답 기록 (총 {len(pairs)}회):")
+        for sid, code in pairs:
+            step = step_titles.get(sid)
+            info = ERROR_FEEDBACK.get(code, {})
+            stages = stages_of(level, sid, code)
+            stage_txt = ", ".join(
+                f"{n}단계({dict((a, b) for a, b, _ in SOLVING_STAGES).get(n, '')})"
+                for n in stages
+            ) or "단계 미확인"
+            lines.append(
+                f"- 문항: {step['question'] if step else sid} / "
+                f"풀이 단계: {stage_txt} / "
+                f"진단된 오류: {info.get('name', code)}"
+            )
+    else:
+        lines.append("\n오답 기록: 없음 (모든 문항을 첫 시도에 정답)")
+
+    covered = set()
+    for s in data["steps"]:
+        covered.update(STEP_STAGES.get(s["id"], ()))
+    ok = sorted(covered - set(stage_numbers))
+    if ok:
+        titles = dict((a, b) for a, b, _ in SOLVING_STAGES)
+        lines.append(
+            "\n오류 없이 통과한 단계: "
+            + ", ".join(f"{n}단계 {titles.get(n, '')}" for n in ok)
+        )
+
+    return "\n".join(l for l in lines if l)
+
+
+def call_ai_level_summary(level, pairs):
+    client = get_ai_client()
+    if client is None:
+        return None, "AI API가 연결되지 않았습니다."
+
+    stage_numbers = sorted({n for sid, code in pairs for n in stages_of(level, sid, code)})
+    log_text = build_level_summary_context(level, pairs, stage_numbers)
+    ref_text, ref_err = build_reference_context(level, stage_numbers)
+
+    user_content = "다음은 한 학생의 이번 수준 학습 로그이다.\n\n" + log_text
+    if ref_text:
+        user_content += (
+            "\n\n---\n\n다음은 분석에 활용할 참고자료이다. "
+            "이 자료는 학생에게 보여주지 말고, 원인 분석과 유형 판단에만 사용하라.\n\n"
+            + ref_text
+        )
+
+    conversation = [
+        {"role": "system", "content": level_summary_system_prompt()},
+        {"role": "user", "content": user_content},
+    ]
+
+    try:
+        kwargs = {
+            "model": get_ai_model(),
+            "messages": conversation,
+            "max_completion_tokens": 2500,
+            "reasoning_effort": get_reasoning_effort(),
+        }
+        try:
+            response = client.chat.completions.create(**kwargs)
+        except Exception:
+            kwargs.pop("reasoning_effort", None)
+            kwargs.pop("max_completion_tokens", None)
+            kwargs["max_tokens"] = 900
+            response = client.chat.completions.create(**kwargs)
+
+        text = (response.choices[0].message.content or "").strip()
+        if not text:
+            return None, "AI가 빈 응답을 반환했습니다. 잠시 후 다시 시도해 주세요."
+        return text, ref_err
+    except Exception as exc:
+        return None, str(exc)
+
+
+def render_ai_level_summary(level, pairs, key_suffix=""):
+    """수준별 피드백 맨 아래에 붙는 AI 종합 피드백."""
+    st.markdown("---")
+    st.markdown("### 🤖 AI 종합 피드백")
+    st.caption(
+        "학습 로그와 선행 연구·선행 학생 사례 자료를 함께 분석해 "
+        "이번 수준의 어려움과 개선 사항을 정리합니다."
+    )
+
+    if not ai_tutor_available():
+        st.info("AI가 연결되지 않아 종합 피드백을 생성할 수 없습니다.")
+        return
+
+    key = f"level_summary_{level}{key_suffix}"
+    err_key = f"level_summary_err_{level}{key_suffix}"
+
+    left, right = st.columns([1, 3])
+    with left:
+        label = "다시 생성" if st.session_state.get(key) else "종합 피드백 받기"
+        clicked = st.button(label, key=f"btn_{key}", use_container_width=True)
+
+    if clicked:
+        with st.spinner("학습 로그를 분석하고 있습니다..."):
+            text, note = call_ai_level_summary(level, pairs)
+        st.session_state[key] = text
+        st.session_state[err_key] = note
+        save_ai_chat_log(
+            level,
+            "level_summary",
+            "assistant",
+            text or f"[실패] {note}",
+            status="success" if text else "error",
+        )
+
+    note = st.session_state.get(err_key)
+    text = st.session_state.get(key)
+
+    if text:
+        st.markdown(latex_to_markdown(text))
+        if note:
+            st.caption(f"참고: {note}")
+    elif note:
+        st.error(note)
+
+
+# ---------------------------------------------------------------------------
+# 지난 수준 피드백 다시 보기 — 저장된 학습 로그에서 오류 기록을 복원한다
+# ---------------------------------------------------------------------------
+@st.cache_data(ttl=30, show_spinner=False)
+def fetch_student_log_rows(student_id):
+    """해당 학생의 전체 학습 로그를 시간순으로 가져온다."""
+    rows = []
+    client = get_supabase_client()
+    if client is not None and student_id:
+        try:
+            resp = (
+                client.table(TABLE_NAME)
+                .select("level, step_id, correct, error_code, timestamp")
+                .eq("student_id", str(student_id).strip())
+                .order("timestamp")
+                .execute()
+            )
+            rows = resp.data or []
+        except Exception:
+            rows = []
+
+    # 데이터베이스가 없거나 비어 있으면 로컬 CSV 백업에서 읽는다.
+    if not rows and LOG_PATH.exists():
+        try:
+            df = pd.read_csv(LOG_PATH, encoding="utf-8-sig")
+            df = df[df["student_id"].astype(str).str.strip() == str(student_id).strip()]
+            if "timestamp" in df.columns:
+                df = df.sort_values("timestamp")
+            rows = df.to_dict("records")
+        except Exception:
+            rows = []
+    return rows
+
+
+def levels_with_records(student_id):
+    """로그가 남아 있는 수준 목록."""
+    found = set()
+    for row in fetch_student_log_rows(student_id):
+        try:
+            found.add(int(row.get("level")))
+        except (TypeError, ValueError):
+            continue
+    return sorted(n for n in found if n in LEVELS)
+
+
+def load_past_level_errors(student_id, level):
+    """로그에서 해당 수준의 (step_id, error_code) 오답 기록을 복원한다.
+    앱이 오답마다 level_errors에 쌓는 것과 같은 결과가 된다."""
+    pairs = []
+    for row in fetch_student_log_rows(student_id):
+        try:
+            if int(row.get("level")) != int(level):
+                continue
+        except (TypeError, ValueError):
+            continue
+        if str(row.get("correct")).strip().lower() in ("true", "1"):
+            continue
+        code = str(row.get("error_code") or "").strip()
+        if not code or code.lower() in ("nan", "none"):
+            continue
+        pairs.append((str(row.get("step_id")), code))
+    return pairs
+
+
 _CELL = "padding:7px 6px;border-bottom:1px solid rgba(128,128,128,.25)"
 
 
@@ -1731,7 +2087,7 @@ def render_stage_table(level, pairs):
 
     counts, names = {}, {}
     for sid, code in pairs:
-        for no in STEP_STAGES.get(sid, ()):
+        for no in stages_of(level, sid, code):
             counts[no] = counts.get(no, 0) + 1
             label = ERROR_FEEDBACK.get(code, {}).get("name", str(code))
             if label not in names.setdefault(no, []):
@@ -1774,7 +2130,7 @@ def render_stage_table(level, pairs):
     )
 
 
-def render_feedback(level_errors, level=None):
+def render_feedback(level_errors, level=None, key_suffix=""):
     if level is None:
         level = st.session_state.level
     pairs = normalize_level_errors(level_errors)
@@ -1792,24 +2148,35 @@ def render_feedback(level_errors, level=None):
         if not pairs:
             st.success("모든 단계를 첫 시도에 정확하게 해결했습니다.")
             st.info("다음 수준에서도 대칭성 → 영역 구분 → 포함 전하 → 선속 → 전기장 식의 순서를 유지하세요.")
-            return
 
         total = sum(counts.values())
-        st.warning(f"이 수준에서 총 {total}회의 오류가 진단되었습니다.")
+        if pairs:
+            st.warning(f"이 수준에서 총 {total}회의 오류가 진단되었습니다.")
 
         for idx, (code, count) in enumerate(counts.most_common(), start=1):
-            info = ERROR_FEEDBACK[code]
+            info = ERROR_FEEDBACK.get(code, {
+                "name": f"미분류 오류({code})",
+                "feedback": "이 오류 코드에 대한 설명이 등록되어 있지 않습니다.",
+                "focus": "해당 풀이 단계를 다시 확인하세요.",
+            })
             stages = sorted({n for sid, c in pairs if c == code
-                             for n in STEP_STAGES.get(sid, ())})
+                             for n in stages_of(level, sid, c)})
             tag = f" · {', '.join(str(n) for n in stages)}단계" if stages else ""
             with st.expander(f"{idx}. {info['name']} · {count}회{tag}", expanded=(idx <= 2)):
                 st.markdown(latex_to_markdown(info["feedback"]))
                 st.markdown(f"**다음 수준에서 집중할 점:** {info['focus']}")
 
-        top_code = counts.most_common(1)[0][0]
-        top = ERROR_FEEDBACK[top_code]
-        st.markdown("### 핵심 처방")
-        st.info(f"가장 빈번한 오류는 **{top['name']}**입니다. {top['focus']}")
+        if pairs:
+            top_code = counts.most_common(1)[0][0]
+            top = ERROR_FEEDBACK.get(top_code, {
+                "name": f"미분류 오류({top_code})",
+                "focus": "해당 풀이 단계를 다시 확인하세요.",
+            })
+            st.markdown("### 핵심 처방")
+            st.info(f"가장 빈번한 오류는 **{top['name']}**입니다. {top['focus']}")
+
+    # 수준별 피드백 맨 아래 — 학습 로그 + 참고자료 기반 AI 종합 피드백
+    render_ai_level_summary(level, pairs, key_suffix)
 
 init_state()
 
@@ -1912,8 +2279,35 @@ with st.sidebar:
                 del st.session_state[key]
             st.rerun()
 
+        _seen = levels_with_records(st.session_state.student_id)
+        if _seen:
+            st.markdown("---")
+            st.caption("지난 수준 피드백 다시 보기")
+            _pick = st.selectbox(
+                "수준 선택",
+                _seen,
+                format_func=lambda n: f"{n}수준",
+                key="review_pick",
+                label_visibility="collapsed",
+            )
+            if st.button("피드백 보기", use_container_width=True, key="review_go"):
+                st.session_state.review_level = int(_pick)
+                st.rerun()
+
 if not st.session_state.started:
     st.info("왼쪽에서 학습자 ID를 입력한 뒤 시작하세요.")
+    st.stop()
+
+_review_level = st.session_state.get("review_level")
+if _review_level:
+    if st.button("← 학습 화면으로 돌아가기"):
+        st.session_state.pop("review_level", None)
+        st.rerun()
+    st.caption(
+        f"{_review_level}수준 · 저장된 학습 로그를 바탕으로 복원한 피드백입니다."
+    )
+    _past_pairs = load_past_level_errors(st.session_state.student_id, _review_level)
+    render_feedback(_past_pairs, int(_review_level), key_suffix="_review")
     st.stop()
 
 if st.session_state.completed:
