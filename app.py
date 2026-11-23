@@ -1676,27 +1676,140 @@ def next_level():
     st.session_state.level_errors = []
     advance_frontier_if_needed()
 
-def render_feedback(level_errors):
+# ---------------------------------------------------------------------------
+# 가우스 법칙 문제 풀이 10단계 (피드백 화면 왼쪽 표)
+# ---------------------------------------------------------------------------
+SOLVING_STAGES = [
+    (1, '전하 분포 파악', '점·선·면·구·원통 형태 확인'),
+    (2, '대칭성 판단', '구대칭·원통대칭·평면대칭 판단'),
+    (3, '가우스 법칙 적용 가능성 판단', '전기장을 쉽게 구할 수 있는지 판단'),
+    (4, '가우스 면 선택', '구·원통·필박스 선택'),
+    (5, '전기장 방향 판단', '방사 방향, 축에 수직, 면에 수직'),
+    (6, '전기선속 판단', 'EA 또는 0 구분'),
+    (7, '포함 전하 계산', '가우스 면 내부 전하 계산'),
+    (8, '적분식 단순화', 'EA로 변환'),
+    (9, '전기장 계산', 'E(r) 도출'),
+    (10, '결과 검토', '방향·차원·연속성·극한 확인'),
+]
+
+# 앱의 각 문항(step id)이 위 10단계 중 어디에 해당하는지
+STEP_STAGES = {
+    # 구 트랙 (1~3수준)
+    'symmetry': (2, 4), 'charge': (7,), 'flux': (8,), 'final': (9,),
+    'regions': (1,), 'density': (7,), 'inside_charge': (7,), 'field': (9,),
+    'graph': (10,), 'cavity': (7, 9), 'shell_charge': (7,), 'boundary': (10,),
+    # 원기둥 트랙 (4~6수준)
+    'c_symmetry': (2, 4), 'c_flux_ends': (5, 6), 'c_charge_out': (7,),
+    'c_flux_side': (8,), 'c_field_out': (9,),
+    'c_regions': (1,), 'c_charge_in': (7,), 'c_flux_in': (8,),
+    'c_field_in': (9,), 'c_field_all': (9,), 'c_graph': (10,),
+    'c_shell_regions': (1,), 'c_shell_inner': (7, 9), 'c_shell_mid_charge': (7,),
+    'c_shell_mid_field': (9,), 'c_shell_out_charge': (7,),
+    'c_shell_out_field': (9,), 'c_shell_final': (9, 10),
+}
+
+_CELL = "padding:7px 6px;border-bottom:1px solid rgba(128,128,128,.25)"
+
+
+def normalize_level_errors(level_errors):
+    """level_errors의 각 원소를 (step_id, error_code) 꼴로 통일한다.
+    예전 형식(코드 문자열만 저장)도 그대로 받아들인다."""
+    pairs = []
+    for item in level_errors or []:
+        if isinstance(item, (tuple, list)) and len(item) >= 2:
+            pairs.append((item[0], item[1]))
+        else:
+            pairs.append((None, item))
+    return pairs
+
+
+def render_stage_table(level, pairs):
+    """이 수준에서 다룬 풀이 단계와 각 단계의 오류 발생 여부를 표로 보여준다."""
+    covered = set()
+    for s in LEVELS[level]["steps"]:
+        covered.update(STEP_STAGES.get(s["id"], ()))
+
+    counts, names = {}, {}
+    for sid, code in pairs:
+        for no in STEP_STAGES.get(sid, ()):
+            counts[no] = counts.get(no, 0) + 1
+            label = ERROR_FEEDBACK.get(code, {}).get("name", str(code))
+            if label not in names.setdefault(no, []):
+                names[no].append(label)
+
+    rows = []
+    for no, title, activity in SOLVING_STAGES:
+        if no in counts:
+            bg, opacity = "rgba(214,48,49,0.13)", "1"
+            mark = ("<span style='color:#d63031;font-weight:700;font-size:1.05rem'>X</span>"
+                    f"<div style='font-size:.68rem;color:#d63031'>{counts[no]}회</div>")
+            sub = ("<div style='font-size:.72rem;color:#d63031;margin-top:3px'>"
+                   + " · ".join(names[no]) + "</div>")
+        elif no in covered:
+            bg, opacity = "transparent", "1"
+            mark = "<span style='font-weight:700;font-size:1.05rem'>O</span>"
+            sub = ""
+        else:
+            bg, opacity = "transparent", ".4"
+            mark = "<span>–</span>"
+            sub = ""
+        rows.append(
+            f"<tr style='background:{bg};opacity:{opacity}'>"
+            f"<td style='{_CELL};text-align:center;width:30px'>{no}</td>"
+            f"<td style='{_CELL}'><div style='font-weight:600'>{title}</div>"
+            f"<div style='font-size:.72rem;opacity:.6'>{activity}</div>{sub}</td>"
+            f"<td style='{_CELL};text-align:center;width:62px'>{mark}</td></tr>"
+        )
+
+    st.markdown(
+        "<table style='width:100%;border-collapse:collapse;font-size:.85rem'>"
+        "<thead><tr>"
+        "<th style='padding:6px;border-bottom:2px solid rgba(128,128,128,.55);width:30px'></th>"
+        "<th style='padding:6px;text-align:left;border-bottom:2px solid rgba(128,128,128,.55)'>단계</th>"
+        "<th style='padding:6px;border-bottom:2px solid rgba(128,128,128,.55);width:62px'>수행 여부</th>"
+        "</tr></thead><tbody>" + "".join(rows) + "</tbody></table>"
+        "<div style='font-size:.72rem;opacity:.6;margin-top:10px;line-height:1.6'>"
+        "O 오류 없이 통과 · <span style='color:#d63031'>X</span> 오류 발생 · – 이 수준에서 다루지 않는 단계</div>",
+        unsafe_allow_html=True,
+    )
+
+
+def render_feedback(level_errors, level=None):
+    if level is None:
+        level = st.session_state.level
+    pairs = normalize_level_errors(level_errors)
+    counts = Counter(code for _, code in pairs)
+
     st.markdown("## 수준별 진단 피드백")
-    if not level_errors:
-        st.success("모든 단계를 첫 시도에 정확하게 해결했습니다.")
-        st.info("다음 수준에서도 대칭성 → 영역 구분 → 포함 전하 → 선속 → 전기장 식의 순서를 유지하세요.")
-        return
+    col_stage, col_error = st.columns([1, 1.25], gap="large")
 
-    counts = Counter(level_errors)
-    total = sum(counts.values())
-    st.warning(f"이 수준에서 총 {total}회의 오류가 진단되었습니다.")
+    with col_stage:
+        st.markdown("#### 문제 풀이 단계별 수행")
+        render_stage_table(level, pairs)
 
-    for idx, (code, count) in enumerate(counts.most_common(), start=1):
-        info = ERROR_FEEDBACK[code]
-        with st.expander(f"{idx}. {info['name']} · {count}회", expanded=(idx <= 2)):
-            st.markdown(latex_to_markdown(info["feedback"]))
-            st.markdown(f"**다음 수준에서 집중할 점:** {info['focus']}")
+    with col_error:
+        st.markdown("#### 오류 진단과 피드백")
+        if not pairs:
+            st.success("모든 단계를 첫 시도에 정확하게 해결했습니다.")
+            st.info("다음 수준에서도 대칭성 → 영역 구분 → 포함 전하 → 선속 → 전기장 식의 순서를 유지하세요.")
+            return
 
-    top_code = counts.most_common(1)[0][0]
-    top = ERROR_FEEDBACK[top_code]
-    st.markdown("### 핵심 처방")
-    st.info(f"가장 빈번한 오류는 **{top['name']}**입니다. {top['focus']}")
+        total = sum(counts.values())
+        st.warning(f"이 수준에서 총 {total}회의 오류가 진단되었습니다.")
+
+        for idx, (code, count) in enumerate(counts.most_common(), start=1):
+            info = ERROR_FEEDBACK[code]
+            stages = sorted({n for sid, c in pairs if c == code
+                             for n in STEP_STAGES.get(sid, ())})
+            tag = f" · {', '.join(str(n) for n in stages)}단계" if stages else ""
+            with st.expander(f"{idx}. {info['name']} · {count}회{tag}", expanded=(idx <= 2)):
+                st.markdown(latex_to_markdown(info["feedback"]))
+                st.markdown(f"**다음 수준에서 집중할 점:** {info['focus']}")
+
+        top_code = counts.most_common(1)[0][0]
+        top = ERROR_FEEDBACK[top_code]
+        st.markdown("### 핵심 처방")
+        st.info(f"가장 빈번한 오류는 **{top['name']}**입니다. {top['focus']}")
 
 init_state()
 
@@ -1938,7 +2051,7 @@ st.progress(
 
 if st.session_state.step >= len(steps):
     st.success(f"{st.session_state.level}수준을 완료했습니다.")
-    render_feedback(st.session_state.level_errors)
+    render_feedback(st.session_state.level_errors, st.session_state.level)
     st.markdown("---")
 
     # 기존의 < 3 을 < 6 으로 변경합니다! (총 6수준이 되었으므로)
@@ -2018,7 +2131,8 @@ with c1:
         st.session_state.latest_error = error_code
 
         if error_code:
-            st.session_state.level_errors.append(error_code)
+            # 어느 풀이 단계에서 난 오류인지 함께 기록한다 (피드백 화면 왼쪽 표에서 사용)
+            st.session_state.level_errors.append((step["id"], error_code))
 
         st.rerun()
 
